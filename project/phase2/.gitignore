@@ -1,3 +1,7 @@
 inputs
 __MACOSX
 __pycache__
+testing
+outputs
+team.txt
+submission.json

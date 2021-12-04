@@ -49,7 +49,7 @@ import os
 #             0,             if i == n + 1   
 # 
 #             (cannot be finished before 1440 so we can't polish this igloo)
-#             f(i + 1, T)    if d_i > T (maybe d_i >= T)? 
+#             f(i + 1, T)    if d_i > T 
 # 
 #             (otherwise) -- this also handles the case where later tasks have earlier deadline (if the late profit is still positive it will polish it otherwise, it won't polish it)
 #             (if we can polish the igloo, we take maximum of polishing the igloo or not polishing the igloo)
@@ -58,40 +58,6 @@ import os
 #                   p_i + f(i + 1, T - d_i)    ------ polish the igloo
 #               }           
 # }
-
-
-# knapsack extended to fit the requirement of polishing igloos problem
-def knapsack_dp_extended(weights, profits, deadlines, capacity):
-    n = len(weights)
-
-    # initialize a mem/lookup table for bottom up approach (fill up table iteratively)
-    # row represents items, cols represent capacity
-    mem = [[0 for _ in range(capacity + 1)] for _ in range(n + 1)] # first row is a dummy sentinel row to make calculations easier
-
-    for i in range(n + 1):
-        for c in range(capacity + 1):
-            if (i == 0) or (c == 0): # sentinel
-                mem[i][c] = 0
-            elif (weights[i - 1] <= c): # if possible to take the current item, take max(with_curr, without_curr)
-                with_curr = profits[i - 1] + mem[i - 1][c - weights[i - 1]]
-                without_curr = mem[i - 1][c]
-                mem[i][c] = max(with_curr, without_curr)
-            else: # not possible to take curr item
-                mem[i][c] = mem[i - 1][c]
-
-    selected_items = []
-    size = capacity
-    for i in range(n, 0, -1):
-        if (mem[i][size] != mem[i - 1][size]):
-            selected_items.append(i)
-            size -= weights[i - 1] # accounts for 1-indexed
-
-    # returns items selected
-    selected_items.reverse()
-    return selected_items
-
-    # returns max profit
-    # return mem[n][capacity]
 
 def solve(tasks):
     """
@@ -106,7 +72,48 @@ def solve(tasks):
     deadlines = [task.get_deadline() for task in tasks]
     capacity = 1440
 
-    return knapsack_dp_extended(weights, profits, deadlines, capacity)
+    # knapsack extended to fit the requirement of polishing igloos problem
+    def knapsack_dp_extended():
+        n = len(weights)
+
+        # initialize a mem/lookup table for bottom up approach (fill up table iteratively)
+        # row represents items, cols represent capacity
+        mem = [[0 for _ in range(capacity + 1)] for _ in range(n + 1)] # first row is a dummy sentinel row to make calculations easier
+
+        for i in range(n + 1):
+            for c in range(capacity + 1):
+                if (i == 0) or (c == 0): # sentinel
+                    mem[i][c] = 0
+                elif (weights[i - 1] <= c): # if possible to take the current item, take max(with_curr, without_curr)
+                    curr_profit = profits[i - 1]
+
+                    mins_late = capacity - deadlines[i - 1]
+                    if (mins_late < 0): # accounts for late completion
+                        mins_late = -1 * mins_late
+                        curr_task = tasks[i - 1]
+                        curr_profit = curr_task.get_late_benefit(mins_late)
+
+                    with_curr = curr_profit + mem[i - 1][c - weights[i - 1]]
+                    without_curr = mem[i - 1][c]
+                    mem[i][c] = max(with_curr, without_curr)
+                else: # not possible to take curr item
+                    mem[i][c] = mem[i - 1][c]
+
+        selected_items = []
+        size = capacity
+        for i in range(n, 0, -1):
+            if (mem[i][size] != mem[i - 1][size]):
+                selected_items.append(i)
+                size -= weights[i - 1] # accounts for 1-indexed
+
+        # returns items selected
+        selected_items.reverse()
+        return selected_items
+
+        # returns max profit
+        # return mem[n][capacity]
+
+    return knapsack_dp_extended()
 
 
 
@@ -124,27 +131,27 @@ def solve(tasks):
 
     # 3. sort the task in increasing order w.r.t. deadline
     # i.e. finish task that have earliest deadline first
-    sorted_tasks = sorted(tasks, key=lambda task: task.get_deadline(), reverse=False)
-    # keep_going = True
-    # i = 0
-    # result = []
-    # while keep_going:
-    #     # if ((i < len(sorted_tasks)) and sorted_tasks[i].get_deadline())
-    #     i += 1
-
-    # return result
-    return [task.get_task_id() for task in sorted_tasks]
+    # sorted_tasks = sorted(tasks, key=lambda task: task.get_deadline(), reverse=False)
+    # return [task.get_task_id() for task in sorted_tasks]
 
 
 # Here's an example of how to run your solver.
 if __name__ == '__main__':
-    # for input_path in os.listdir('inputs/'):
-    #     output_path = 'outputs/' + input_path[:-3] + '.out'
-    #     tasks = read_input_file(input_path)
+    folders = ['small/', 'medium/', 'large/']
+    for folder in folders:
+        for input_path in os.listdir('inputs/' + folder):
+            output_path = 'outputs/' + folder + input_path[:-3] + '.out'
+            tasks = read_input_file('inputs/' + folder + input_path)
+            output = solve(tasks)
+            write_output_file(output_path, output)
+
+    # testing
+    # for input_path in os.listdir('testing/'):
+    #     output_path = 'testing/' + input_path[:-3] + '.out'
+    #     tasks = read_input_file('testing/' + input_path)
     #     output = solve(tasks)
     #     write_output_file(output_path, output)
 
-    # testing
-    tasks = [Task(1, 3, 3, 2), Task(2, 8, 1, 2), Task(3, 3, 3, 4), Task(4, 8, 4, 5), Task(5, 3, 2, 3)]
-    result = solve(tasks)
-    print(result)
+    # tasks = [Task(1, 3, 3, 2), Task(2, 8, 1, 2), Task(3, 3, 3, 4), Task(4, 8, 4, 5), Task(5, 3, 2, 3)]
+    # result = solve(tasks)
+    # print(result)
