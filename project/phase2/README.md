@@ -15,3 +15,16 @@ When writing inputs/outputs:
 - Make sure you use the functions `write_input_file` and `write_output_file` provided
 - Run the functions `read_input_file` and `read_output_file` to validate your files before submitting!
 - These are the functions run by the autograder to validate submissions
+
+## How to run the project / generate outputs
+Go to the working directory, create following folder structure
+```
+outputs
+    large
+    medium
+    small
+```
+ and run the following command and output files should be generated
+ ```
+ python solver.py
+ ```
